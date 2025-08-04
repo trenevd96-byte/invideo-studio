@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function HomePage() {
   return (
@@ -21,14 +23,14 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/editor">
-                <button className="bg-white text-blue-900 hover:bg-blue-50 text-lg px-8 py-4 rounded-lg font-semibold transition-colors">
+                <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50 text-lg px-8 py-4">
                   🎬 Open Studio
-                </button>
+                </Button>
               </Link>
               <Link href="/templates">
-                <button className="border-white border text-white hover:bg-white/10 text-lg px-8 py-4 rounded-lg font-semibold transition-colors">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-lg px-8 py-4">
                   Browse Templates →
-                </button>
+                </Button>
               </Link>
             </div>
           </div>
@@ -49,35 +51,41 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Script Generation</h3>
-              <p className="text-gray-600">
-                Transform your ideas into professional scripts with GPT-4 powered content generation
-              </p>
-            </div>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <CardTitle>AI Script Generation</CardTitle>
+                <CardDescription>
+                  Transform your ideas into professional scripts with GPT-4 powered content generation
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">🎬</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Drag & Drop Editor</h3>
-              <p className="text-gray-600">
-                Intuitive timeline editor with real-time preview and professional-grade controls
-              </p>
-            </div>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🎬</span>
+                </div>
+                <CardTitle>Drag & Drop Editor</CardTitle>
+                <CardDescription>
+                  Intuitive timeline editor with real-time preview and professional-grade controls
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">🤖</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI Avatars & Voices</h3>
-              <p className="text-gray-600">
-                Create engaging presentations with AI-generated avatars and natural voice synthesis
-              </p>
-            </div>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🤖</span>
+                </div>
+                <CardTitle>AI Avatars & Voices</CardTitle>
+                <CardDescription>
+                  Create engaging presentations with AI-generated avatars and natural voice synthesis
+                </CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </section>
@@ -100,31 +108,101 @@ export default function HomePage() {
               { name: 'Educational Tutorial', category: 'Education' },
               { name: 'Social Media Promo', category: 'Marketing' },
             ].map((template) => (
-              <div key={template.name} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={template.name} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                   <span className="text-6xl">🎬</span>
                 </div>
-                <div className="p-6">
+                <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-lg">{template.name}</h3>
                       <p className="text-gray-600">{template.category}</p>
                     </div>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-                      Use Template
-                    </button>
+                    <Button size="sm">Use Template</Button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
           <div className="text-center">
             <Link href="/templates">
-              <button className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+              <Button size="lg">
                 View All Templates →
-              </button>
+              </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-600">
+              Start free and scale as you grow
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Free',
+                price: '$0',
+                description: 'Perfect for getting started',
+                features: ['3 videos per month', 'Basic templates', '720p exports', 'Community support']
+              },
+              {
+                name: 'Pro',
+                price: '$29',
+                description: 'For serious creators',
+                features: ['Unlimited videos', 'Premium templates', '4K exports', 'AI voice synthesis', 'Priority support'],
+                popular: true
+              },
+              {
+                name: 'Enterprise',
+                price: '$99',
+                description: 'For teams and agencies',
+                features: ['Everything in Pro', 'Custom branding', 'API access', 'Dedicated support', 'Advanced analytics']
+              }
+            ].map((plan) => (
+              <Card key={plan.name} className={`relative ${plan.popular ? 'border-blue-500 shadow-lg' : ''}`}>
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <div className="text-4xl font-bold">
+                    {plan.price}
+                    <span className="text-lg font-normal text-gray-600">/month</span>
+                  </div>
+                  <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center">
+                        <span className="text-green-500 mr-3">✓</span>
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className={`w-full ${plan.popular ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                    variant={plan.popular ? 'default' : 'outline'}
+                  >
+                    Get Started
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -139,9 +217,9 @@ export default function HomePage() {
             Join thousands of creators who are already using our platform to create engaging content
           </p>
           <Link href="/editor">
-            <button className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-4 rounded-lg font-semibold transition-colors">
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-4">
               ✨ Start Creating Now
-            </button>
+            </Button>
           </Link>
           <div className="mt-8">
             <p className="text-sm opacity-75">
