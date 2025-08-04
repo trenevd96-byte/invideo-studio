@@ -12,8 +12,12 @@ export const metadata: Metadata = {
   description: 'Professional video creation platform with AI-powered automation',
   keywords: 'video editor, AI video, UGC, influencer, content creation',
   authors: [{ name: 'InVideo Studio Team' }],
-  viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow'
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default async function RootLayout({

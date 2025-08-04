@@ -351,32 +351,39 @@ export function AssetLibrary({ width = 400 }: AssetLibraryProps) {
   const handleAssetSelect = useCallback((asset: Asset) => {
     setSelectedAsset(asset)
     
-    // Add asset as a layer
-    const layerData = {
+    // Add asset as a layer with all required properties
+    const baseLayerData = {
       type: asset.type,
-      source: asset.url,
       name: asset.title,
       x: 100,
       y: 100,
       startTime: 0,
-      duration: asset.duration || (asset.type === 'image' ? 5 : 10)
+      duration: asset.duration || (asset.type === 'image' ? 5 : 10),
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      data: {
+        source: asset.url,
+        originalAsset: asset
+      }
     }
 
     if (asset.type === 'image') {
       addLayer({
-        ...layerData,
+        ...baseLayerData,
         width: 400,
         height: 300
       })
     } else if (asset.type === 'video') {
       addLayer({
-        ...layerData,
+        ...baseLayerData,
         width: 1920,
         height: 1080
       })
     } else if (asset.type === 'audio') {
       addLayer({
-        ...layerData,
+        ...baseLayerData,
         width: 0,
         height: 0
       })

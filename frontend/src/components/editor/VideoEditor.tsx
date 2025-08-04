@@ -1,8 +1,15 @@
 'use client'
 
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { Stage, Layer, Rect, Text, Image as KonvaImage, Group } from 'react-konva'
-import Konva from 'konva'
+import dynamic from 'next/dynamic'
+
+// Dynamically import Konva components to avoid SSR issues
+const Stage = dynamic(() => import('react-konva').then(mod => ({ default: mod.Stage })), { ssr: false })
+const Layer = dynamic(() => import('react-konva').then(mod => ({ default: mod.Layer })), { ssr: false })
+const Rect = dynamic(() => import('react-konva').then(mod => ({ default: mod.Rect })), { ssr: false })
+const Text = dynamic(() => import('react-konva').then(mod => ({ default: mod.Text })), { ssr: false })
+const KonvaImage = dynamic(() => import('react-konva').then(mod => ({ default: mod.Image })), { ssr: false })
+const Group = dynamic(() => import('react-konva').then(mod => ({ default: mod.Group })), { ssr: false })
 import { useEditorStore } from '@/stores/editor-store'
 import { Button } from '@/components/ui/button'
 import { Play, Pause, Square, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
@@ -13,16 +20,21 @@ interface VideoEditorProps {
 }
 
 export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
-  const stageRef = useRef<Konva.Stage>(null)
+  const stageRef = useRef<any>(null)
   const [stageScale, setStageScale] = useState(1)
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 })
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure client-side rendering for Konva
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const {
     project,
     isPlaying,
     currentTime,
-    currentScene,
     play,
     pause,
     stop,
@@ -31,15 +43,19 @@ export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
     deleteLayer,
     addLayer,
     selectLayer,
-    selectedLayerId
+    selectedLayer
   } = useEditorStore()
+
+  // Get current scene and selected layer ID
+  const currentScene = project?.scenes.find(s => s.id === useEditorStore.getState().selectedScene) || project?.scenes[0]
+  const selectedLayerId = selectedLayer
 
   // Canvas dimensions based on project settings
   const canvasWidth = project?.width || 1920
   const canvasHeight = project?.height || 1080
 
   // Handle layer selection
-  const handleStageMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleStageMouseDown = useCallback((e: any) => {
     // Clicked on stage - check if we clicked on an empty area
     if (e.target === e.target.getStage()) {
       setSelectedId(null)
@@ -65,7 +81,7 @@ export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
   }, [updateLayer])
 
   // Handle transform end for layers
-  const handleTransformEnd = useCallback((layerId: string, node: Konva.Node) => {
+  const handleTransformEnd = useCallback((layerId: string, node: any) => {
     const scaleX = node.scaleX()
     const scaleY = node.scaleY()
     
@@ -132,10 +148,10 @@ export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
       rotation: layer.rotation || 0,
       opacity: layer.opacity || 1,
       draggable: true,
-      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+      onDragEnd: (e: any) => {
         handleDragEnd(layer.id, e.target.attrs)
       },
-      onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+      onTransformEnd: (e: any) => {
         handleTransformEnd(layer.id, e.target)
       }
     }
@@ -253,7 +269,7 @@ export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
 
       {/* Canvas */}
       <div className="flex justify-center items-center" style={{ width, height }}>
-        <Stage
+        {isClient && <Stage
           ref={stageRef}
           width={width}
           height={height}
@@ -293,7 +309,7 @@ export function VideoEditor({ width = 800, height = 450 }: VideoEditorProps) {
               </Group>
             ))}
           </Layer>
-        </Stage>
+        </Stage>}
       </div>
 
       {/* Timeline scrubber */}

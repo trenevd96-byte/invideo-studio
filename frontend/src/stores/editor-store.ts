@@ -16,6 +16,7 @@ export interface Layer {
   opacity: number
   visible: boolean
   locked: boolean
+  muted?: boolean // For audio/video layers
   data: any // Layer-specific data
 }
 
@@ -89,6 +90,8 @@ interface EditorActions {
   deleteLayer: (layerId: string) => void
   duplicateLayer: (layerId: string) => void
   selectLayer: (layerId: string | null) => void
+  moveLayerUp: (layerId: string) => void
+  moveLayerDown: (layerId: string) => void
   
   // Scene actions
   addScene: (scene: Omit<Scene, 'id'>) => void
@@ -369,6 +372,42 @@ export const useEditorStore = create<EditorStore>()(
         set((state) => {
           state.selectedLayer = layerId
         })
+      },
+
+      moveLayerUp: (layerId: string) => {
+        set((state) => {
+          if (!state.project || !state.selectedScene) return
+          
+          const scene = state.project.scenes.find(s => s.id === state.selectedScene)
+          if (!scene) return
+          
+          const layerIndex = scene.layers.findIndex(l => l.id === layerId)
+          if (layerIndex > 0) {
+            const layer = scene.layers[layerIndex]
+            scene.layers.splice(layerIndex, 1)
+            scene.layers.splice(layerIndex - 1, 0, layer)
+          }
+        })
+        
+        get().pushToHistory()
+      },
+
+      moveLayerDown: (layerId: string) => {
+        set((state) => {
+          if (!state.project || !state.selectedScene) return
+          
+          const scene = state.project.scenes.find(s => s.id === state.selectedScene)
+          if (!scene) return
+          
+          const layerIndex = scene.layers.findIndex(l => l.id === layerId)
+          if (layerIndex < scene.layers.length - 1) {
+            const layer = scene.layers[layerIndex]
+            scene.layers.splice(layerIndex, 1)
+            scene.layers.splice(layerIndex + 1, 0, layer)
+          }
+        })
+        
+        get().pushToHistory()
       },
 
       // Scene actions

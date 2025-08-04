@@ -213,8 +213,9 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
   const [activeTab, setActiveTab] = useState('layers')
   
   const {
-    currentScene,
-    selectedLayerId,
+    project,
+    selectedScene,
+    selectedLayer,
     selectLayer,
     updateLayer,
     deleteLayer,
@@ -224,9 +225,11 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
     moveLayerDown
   } = useEditorStore()
 
+  // Get current scene and its layers
+  const currentScene = project?.scenes.find(s => s.id === selectedScene) || project?.scenes[0]
   const layers = currentScene?.layers || []
   
-  const selectedLayer = layers.find(layer => layer.id === selectedLayerId)
+  const selectedLayerData = layers.find(layer => layer.id === selectedLayer)
 
   // Layer management handlers
   const handleToggleVisibility = useCallback((layerId: string) => {
@@ -248,14 +251,19 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
   const handleAddTextLayer = useCallback(() => {
     addLayer({
       type: 'text',
-      content: 'New Text',
+      name: 'New Text',
       x: 100,
       y: 100,
       width: 200,
       height: 50,
       startTime: 0,
       duration: 5,
-      style: {
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      data: {
+        content: 'New Text',
         fontSize: 24,
         fontFamily: 'Arial',
         color: '#000000',
@@ -268,13 +276,20 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
     // This would typically open a file picker
     addLayer({
       type: 'image',
+      name: 'New Image',
       x: 100,
       y: 100,
       width: 300,
       height: 200,
       startTime: 0,
       duration: 5,
-      source: '' // URL would be set after upload
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      data: {
+        source: '' // URL would be set after upload
+      }
     })
   }, [addLayer])
 
@@ -282,13 +297,20 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
     // This would typically open a file picker
     addLayer({
       type: 'video',
+      name: 'New Video',
       x: 0,
       y: 0,
       width: 1920,
       height: 1080,
       startTime: 0,
       duration: 10,
-      source: '' // URL would be set after upload
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      data: {
+        source: '' // URL would be set after upload
+      }
     })
   }, [addLayer])
 
@@ -296,13 +318,20 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
     // This would typically open a file picker
     addLayer({
       type: 'audio',
+      name: 'New Audio',
       x: 0,
       y: 0,
       width: 0,
       height: 0,
       startTime: 0,
       duration: 10,
-      source: '' // URL would be set after upload
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      data: {
+        source: '' // URL would be set after upload
+      }
     })
   }, [addLayer])
 
@@ -369,7 +398,7 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                   <LayerItem
                     key={layer.id}
                     layer={layer}
-                    isSelected={selectedLayerId === layer.id}
+                    isSelected={selectedLayer === layer.id}
                     onSelect={selectLayer}
                     onToggleVisibility={handleToggleVisibility}
                     onToggleMute={handleToggleMute}
@@ -386,13 +415,13 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
         </TabsContent>
 
         <TabsContent value="properties" className="flex-1 p-2">
-          {selectedLayer ? (
+          {selectedLayerData ? (
             <ScrollArea className="h-full">
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Layer Properties</h3>
                   <div className="text-sm text-gray-500 mb-4">
-                    {selectedLayer.type} • {selectedLayer.id.slice(-8)}
+                    {selectedLayerData.type} • {selectedLayerData.id.slice(-8)}
                   </div>
                 </div>
 
@@ -402,8 +431,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                     <Label htmlFor="layer-name">Name</Label>
                     <Input
                       id="layer-name"
-                      value={selectedLayer.name || ''}
-                      onChange={(e) => updateLayer(selectedLayer.id, { name: e.target.value })}
+                      value={selectedLayerData.name || ''}
+                      onChange={(e) => updateLayer(selectedLayerData.id, { name: e.target.value })}
                       placeholder="Layer name"
                     />
                   </div>
@@ -415,8 +444,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                       <Input
                         id="layer-x"
                         type="number"
-                        value={selectedLayer.x || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { x: parseFloat(e.target.value) })}
+                        value={selectedLayerData.x || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { x: parseFloat(e.target.value) })}
                       />
                     </div>
                     <div>
@@ -424,8 +453,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                       <Input
                         id="layer-y"
                         type="number"
-                        value={selectedLayer.y || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { y: parseFloat(e.target.value) })}
+                        value={selectedLayerData.y || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { y: parseFloat(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -436,8 +465,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                       <Input
                         id="layer-width"
                         type="number"
-                        value={selectedLayer.width || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { width: parseFloat(e.target.value) })}
+                        value={selectedLayerData.width || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { width: parseFloat(e.target.value) })}
                       />
                     </div>
                     <div>
@@ -445,8 +474,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                       <Input
                         id="layer-height"
                         type="number"
-                        value={selectedLayer.height || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { height: parseFloat(e.target.value) })}
+                        value={selectedLayerData.height || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { height: parseFloat(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -459,8 +488,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                         id="layer-start"
                         type="number"
                         step="0.1"
-                        value={selectedLayer.startTime || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { startTime: parseFloat(e.target.value) })}
+                        value={selectedLayerData.startTime || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { startTime: parseFloat(e.target.value) })}
                       />
                     </div>
                     <div>
@@ -469,8 +498,8 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                         id="layer-duration"
                         type="number"
                         step="0.1"
-                        value={selectedLayer.duration || 0}
-                        onChange={(e) => updateLayer(selectedLayer.id, { duration: parseFloat(e.target.value) })}
+                        value={selectedLayerData.duration || 0}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { duration: parseFloat(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -483,24 +512,26 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                       min={0}
                       max={1}
                       step={0.01}
-                      value={[selectedLayer.opacity || 1]}
-                      onValueChange={([value]) => updateLayer(selectedLayer.id, { opacity: value })}
+                      value={[selectedLayerData.opacity || 1]}
+                      onValueChange={([value]) => updateLayer(selectedLayerData.id, { opacity: value })}
                       className="mt-2"
                     />
                     <div className="text-xs text-gray-500 mt-1">
-                      {Math.round((selectedLayer.opacity || 1) * 100)}%
+                      {Math.round((selectedLayerData.opacity || 1) * 100)}%
                     </div>
                   </div>
 
                   {/* Text-specific properties */}
-                  {selectedLayer.type === 'text' && (
+                  {selectedLayerData.type === 'text' && (
                     <>
                       <div>
                         <Label htmlFor="layer-content">Text Content</Label>
                         <Input
                           id="layer-content"
-                          value={selectedLayer.content || ''}
-                          onChange={(e) => updateLayer(selectedLayer.id, { content: e.target.value })}
+                          value={selectedLayerData.data?.content || ''}
+                          onChange={(e) => updateLayer(selectedLayerData.id, { 
+                            data: { ...selectedLayerData.data, content: e.target.value }
+                          })}
                           placeholder="Enter text"
                         />
                       </div>
@@ -510,9 +541,9 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                         <Input
                           id="layer-font-size"
                           type="number"
-                          value={selectedLayer.style?.fontSize || 24}
-                          onChange={(e) => updateLayer(selectedLayer.id, { 
-                            style: { ...selectedLayer.style, fontSize: parseFloat(e.target.value) }
+                          value={selectedLayerData.data?.fontSize || 24}
+                          onChange={(e) => updateLayer(selectedLayerData.id, { 
+                            data: { ...selectedLayerData.data, fontSize: parseFloat(e.target.value) }
                           })}
                         />
                       </div>
@@ -522,9 +553,9 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                         <Input
                           id="layer-color"
                           type="color"
-                          value={selectedLayer.style?.color || '#000000'}
-                          onChange={(e) => updateLayer(selectedLayer.id, { 
-                            style: { ...selectedLayer.style, color: e.target.value }
+                          value={selectedLayerData.data?.color || '#000000'}
+                          onChange={(e) => updateLayer(selectedLayerData.id, { 
+                            data: { ...selectedLayerData.data, color: e.target.value }
                           })}
                         />
                       </div>
@@ -532,13 +563,15 @@ export function LayerPanel({ width = 300 }: LayerPanelProps) {
                   )}
 
                   {/* Image/Video specific properties */}
-                  {(selectedLayer.type === 'image' || selectedLayer.type === 'video') && (
+                  {(selectedLayerData.type === 'image' || selectedLayerData.type === 'video') && (
                     <div>
                       <Label htmlFor="layer-source">Source URL</Label>
                       <Input
                         id="layer-source"
-                        value={selectedLayer.source || ''}
-                        onChange={(e) => updateLayer(selectedLayer.id, { source: e.target.value })}
+                        value={selectedLayerData.data?.source || ''}
+                        onChange={(e) => updateLayer(selectedLayerData.id, { 
+                          data: { ...selectedLayerData.data, source: e.target.value }
+                        })}
                         placeholder="Enter URL"
                       />
                     </div>

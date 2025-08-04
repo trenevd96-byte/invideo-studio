@@ -118,10 +118,10 @@ export function Timeline({ height = 300 }: TimelineProps) {
 
   const {
     project,
-    currentScene,
     currentTime,
     isPlaying,
-    selectedLayerId,
+    selectedLayer,
+    selectedScene,
     play,
     pause,
     stop,
@@ -130,9 +130,12 @@ export function Timeline({ height = 300 }: TimelineProps) {
     selectLayer,
     deleteLayer,
     duplicateLayer,
-    addScene,
-    scenes
+    addScene
   } = useEditorStore()
+
+  // Get current scene
+  const currentSceneData = project?.scenes.find(s => s.id === selectedScene) || project?.scenes[0]
+  const selectedLayerId = selectedLayer
 
   const duration = project?.duration || 60
   const timelineWidth = duration * scale
@@ -272,7 +275,7 @@ export function Timeline({ height = 300 }: TimelineProps) {
 
           {/* Scene tracks */}
           <div className="space-y-1 p-2">
-            {scenes.map((scene, sceneIndex) => (
+            {project?.scenes.map((scene, sceneIndex) => (
               <div key={scene.id} className="relative">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm text-gray-400 min-w-[60px]">
@@ -281,7 +284,12 @@ export function Timeline({ height = 300 }: TimelineProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => addScene()}
+                    onClick={() => addScene({
+                      name: `Scene ${(project?.scenes.length || 0) + 1}`,
+                      duration: 10,
+                      layers: [],
+                      transitions: {}
+                    })}
                   >
                     <Plus className="w-3 h-3" />
                   </Button>

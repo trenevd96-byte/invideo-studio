@@ -39,13 +39,21 @@ const nextConfig = {
     // Handle canvas module for server-side rendering
     if (isServer) {
       config.externals.push('canvas')
+      config.externals.push('konva/lib/index-node')
     }
     
     // Handle konva with canvas
     config.externals = config.externals || []
     config.externals.push({
-      canvas: 'canvas'
+      canvas: 'canvas',
+      'konva/lib/index-node': 'konva/lib/index-node'
     })
+
+    // Resolve canvas module issues
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      canvas: false
+    }
 
     return config
   }
