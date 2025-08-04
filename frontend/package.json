@@ -40,6 +40,10 @@
     "clsx": "^2.1.1",
     "class-variance-authority": "^0.7.0",
     "tailwind-merge": "^2.4.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-scroll-area": "^1.1.0",
+    "@radix-ui/react-slider": "^1.2.0",
     
     "axios": "^1.7.2",
     "react-hook-form": "^7.52.1",
@@ -55,8 +59,8 @@
     "@types/fabric": "^5.3.8"
   },
   "devDependencies": {
-    "@next/eslint-config-next": "14.2.5",
     "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.5",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
     
