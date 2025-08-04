@@ -6,10 +6,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 interface ProvidersProps {
   children: React.ReactNode
-  session?: any
 }
 
-export function Providers({ children, session }: ProvidersProps) {
+export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
