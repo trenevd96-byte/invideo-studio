@@ -1,0 +1,231 @@
+name: Monitor & Maintenance
+
+on:
+  schedule:
+    # Run health checks every 15 minutes
+    - cron: '*/15 * * * *'
+    # Run maintenance tasks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Check Frontend Health
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://invideo-studio.vercel.app/health)
+          if [ $response -ne 200 ]; then
+            echo "Frontend health check failed: HTTP $response"
+            exit 1
+          fi
+          echo "Frontend is healthy: HTTP $response"
+
+      - name: Check Backend Health
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://invideo-studio-backend.railway.app/health)
+          if [ $response -ne 200 ]; then
+            echo "Backend health check failed: HTTP $response"
+            exit 1
+          fi
+          echo "Backend is healthy: HTTP $response"
+
+      - name: Check API Endpoints
+        run: |
+          # Check critical API endpoints
+          endpoints=(
+            "https://invideo-studio-backend.railway.app/api"
+            "https://invideo-studio-backend.railway.app/api/ai/status"
+          )
+          
+          for endpoint in "${endpoints[@]}"; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" $endpoint)
+            if [ $response -ne 200 ]; then
+              echo "API endpoint check failed: $endpoint returned HTTP $response"
+              exit 1
+            fi
+            echo "API endpoint healthy: $endpoint returned HTTP $response"
+          done
+
+      - name: Notify on Health Check Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '🚨 InVideo Studio health check failed! Services may be down.'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  maintenance:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run Database Maintenance
+        working-directory: ./backend
+        run: |
+          # Cleanup old render jobs (older than 30 days)
+          node -e "
+            const { SupabaseService } = require('./dist/services/supabase-service');
+            const supabase = new SupabaseService();
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            
+            supabase.client
+              .from('render_jobs')
+              .delete()
+              .lt('created_at', thirtyDaysAgo.toISOString())
+              .then(({ error }) => {
+                if (error) throw error;
+                console.log('Old render jobs cleaned up');
+              })
+              .catch(console.error);
+          "
+
+      - name: Clean Temp Files
+        working-directory: ./backend
+        run: |
+          # This would run on the actual server, not in CI
+          echo "Temp file cleanup would run on production server"
+
+      - name: Check Disk Space
+        run: |
+          # Monitor disk usage
+          df -h
+          
+          # Alert if disk usage is above 80%
+          disk_usage=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+          if [ $disk_usage -gt 80 ]; then
+            echo "High disk usage detected: ${disk_usage}%"
+            # This would trigger an alert in production
+          fi
+
+      - name: Generate Usage Report
+        working-directory: ./backend
+        run: |
+          # Generate daily usage statistics
+          node -e "
+            const { SupabaseService } = require('./dist/services/supabase-service');
+            const supabase = new SupabaseService();
+            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            
+            Promise.all([
+              supabase.client.from('render_jobs').select('count').gte('created_at', yesterday.toISOString()),
+              supabase.client.from('projects').select('count').gte('created_at', yesterday.toISOString()),
+              supabase.client.from('users').select('count').gte('created_at', yesterday.toISOString())
+            ]).then(([renders, projects, users]) => {
+              console.log('Daily Statistics:');
+              console.log('New Renders:', renders.data?.length || 0);
+              console.log('New Projects:', projects.data?.length || 0);
+              console.log('New Users:', users.data?.length || 0);
+            }).catch(console.error);
+          "
+
+      - name: Update Dependencies Check
+        working-directory: ./backend
+        run: |
+          # Check for outdated dependencies
+          npm outdated || true
+          
+          # Check for security vulnerabilities
+          npm audit --audit-level=high
+
+      - name: Performance Metrics
+        run: |
+          # Check response times
+          start_time=$(date +%s%N)
+          curl -s https://invideo-studio-backend.railway.app/health > /dev/null
+          end_time=$(date +%s%N)
+          response_time=$(( (end_time - start_time) / 1000000 ))
+          
+          echo "API Response Time: ${response_time}ms"
+          
+          # Alert if response time is too high
+          if [ $response_time -gt 5000 ]; then
+            echo "High response time detected: ${response_time}ms"
+          fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Docker Image Security Scan
+        run: |
+          # Scan Docker images for vulnerabilities
+          docker pull node:18-alpine
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image node:18-alpine
+
+  backup:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Backup Database
+        run: |
+          # This would typically connect to your database and create backups
+          # For Supabase, this might involve using their backup APIs
+          echo "Database backup would be performed here"
+          
+          # Example backup command (adjust for your database)
+          # pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+
+      - name: Upload Backup to Cloud Storage
+        run: |
+          # Upload backup files to cloud storage (S3, GCS, etc.)
+          echo "Backup upload would be performed here"
+
+      - name: Cleanup Old Backups
+        run: |
+          # Remove backups older than 30 days
+          echo "Old backup cleanup would be performed here"
+
+  notify-maintenance-complete:
+    needs: [maintenance, security-scan, backup]
+    runs-on: ubuntu-latest
+    if: always() && (github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Notify Maintenance Status
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            🔧 Daily maintenance completed for InVideo Studio
+            
+            Maintenance: ${{ needs.maintenance.result }}
+            Security Scan: ${{ needs.security-scan.result }}
+            Backup: ${{ needs.backup.result }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

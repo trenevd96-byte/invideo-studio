@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # Frontend - React + Konva.js Editor
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - invideo-network
+
+  # Backend - Express + AI + FFmpeg
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY}
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - render_cache:/app/cache
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - invideo-network
+
+  # Redis - Job Queue & Caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - invideo-network
+    command: redis-server --appendonly yes
+
+  # PostgreSQL - Local Development Database (Optional - use Supabase in production)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: invideo_studio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - invideo-network
+
+  # Background Job Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run worker
+    environment:
+      - NODE_ENV=development
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - render_cache:/app/cache
+    depends_on:
+      - redis
+    networks:
+      - invideo-network
+
+  # Redis Commander - Job Queue Management UI (Development)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    hostname: redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - invideo-network
+    profiles:
+      - dev-tools
+
+volumes:
+  redis_data:
+  postgres_data:
+  render_cache:
+
+networks:
+  invideo-network:
+    driver: bridge
